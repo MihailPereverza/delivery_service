@@ -1,6 +1,5 @@
 from flask import Flask
 from flask_restful import Api
-import os
 
 from data import db_session
 from resources.courier_resources import CouriersListResource, CouriersResource
