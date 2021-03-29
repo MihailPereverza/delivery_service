@@ -1,7 +1,7 @@
 from sqlalchemy import Column, String, Integer, Float, DateTime, ForeignKey
 from sqlalchemy.orm import relation, validates
 from .couriers import Courier
-from .couriers_type import Courier_type
+from .couriers_type import CourierType
 from .db_session import SqlAlchemyBase, create_session
 
 
@@ -16,8 +16,8 @@ class Order(SqlAlchemyBase):
     type_for_delivery = Column(String)
 
     # 1 - название класса, который ссылается сюда, 2 - название этого класса
-    regions = relation('Order_region', back_populates='order')
-    intervals = relation('Interval_delivery', back_populates='order')
+    regions = relation('OrderRegion', back_populates='order')
+    intervals = relation('IntervalDelivery', back_populates='order')
     courier = relation('Courier')
 
     @validates('order_id')
@@ -29,7 +29,7 @@ class Order(SqlAlchemyBase):
 
     @validates('weight')
     def validate_weight(self, key, value):
-        assert isinstance(value, (float, int)) and 50 >= value >= 0.01
+        assert isinstance(value, (float, int)) and 50 >= value >= 0.01 and round(value, 2) == value
         return value
 
     @validates('courier_id')
@@ -42,6 +42,6 @@ class Order(SqlAlchemyBase):
     @validates('type_for_delivery')
     def validate_courier_type(self, key, value):
         session = create_session()
-        types = [courier_type.type for courier_type in session.query(Courier_type).all()]
+        types = [courier_type.type for courier_type in session.query(CourierType).all()]
         assert value in types or value is None
         return value

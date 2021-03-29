@@ -1,7 +1,7 @@
-from sqlalchemy import Column, String, Integer, Float
+from sqlalchemy import Column, String, Integer
 from .db_session import SqlAlchemyBase, create_session
 from sqlalchemy.orm import relation, validates
-from .couriers_type import Courier_type
+from .couriers_type import CourierType
 
 
 class Courier(SqlAlchemyBase):
@@ -24,7 +24,6 @@ class Courier(SqlAlchemyBase):
     @validates('courier_type')
     def validate_courier_type(self, key, value):
         session = create_session()
-        types = [courier_type.type for courier_type in session.query(Courier_type).all()]
+        types = [courier_type.type for courier_type in session.query(CourierType).all()]
         assert value in types
         return value
-

@@ -6,13 +6,14 @@ import sqlalchemy.ext.declarative as dec
 SqlAlchemyBase = dec.declarative_base()
 
 __factory = None
+__engine = None
 
 
 def global_init(db_file):
-    global __factory
+    global __factory, __engine
 
     if __factory:
-        return
+        return __engine
 
     if not db_file or not db_file.strip():
         raise Exception("Необходимо указать файл базы данных.")
@@ -27,6 +28,8 @@ def global_init(db_file):
     from . import __all_models
 
     SqlAlchemyBase.metadata.create_all(engine)
+    __engine = engine
+    return engine
 
 
 def create_session() -> Session:

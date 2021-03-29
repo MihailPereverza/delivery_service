@@ -1,10 +1,12 @@
-from sqlalchemy import Column, Integer, ForeignKey, Time
-from sqlalchemy.orm import relation, validates
-from .db_session import SqlAlchemyBase
 from datetime import datetime
 
+from sqlalchemy import Column, Integer, ForeignKey, Time
+from sqlalchemy.orm import relation, validates
 
-class Interval_delivery(SqlAlchemyBase):
+from .db_session import SqlAlchemyBase
+
+
+class IntervalDelivery(SqlAlchemyBase):
     __tablename__ = 'Intervals_delivery'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -19,6 +21,9 @@ class Interval_delivery(SqlAlchemyBase):
     def validate_time_start(self, key, value: str):
         assert isinstance(value, str)
         value = value.split('-')
+        time_stop = datetime.strptime(value[1], '%H:%M')
+        time_start = datetime.strptime(value[0], '%H:%M')
+        assert time_stop > time_start
         value = datetime.strptime(value[0], '%H:%M').time()
         return value
 
@@ -26,5 +31,11 @@ class Interval_delivery(SqlAlchemyBase):
     def validate_time_stop(self, key, value: str):
         assert isinstance(value, str)
         value = value.split('-')
+        time_stop = datetime.strptime(value[1], '%H:%M')
+        time_start = datetime.strptime(value[0], '%H:%M')
+        assert time_stop > time_start
         value = datetime.strptime(value[1], '%H:%M').time()
         return value
+
+    def __str__(self):
+        return f'{self.time_start.strftime("%H:%M")}-{self.time_stop.strftime("%H:%M")}'

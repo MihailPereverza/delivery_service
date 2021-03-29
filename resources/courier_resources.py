@@ -1,12 +1,12 @@
 from flask import request, make_response, jsonify, abort
 from flask_restful import Resource
 from data.couriers import Courier
-from data.couriers_type import Courier_type
+from data.couriers_type import CourierType
 from data.db_session import create_session
 from data.intervals import Interval
-from data.intervals_delivery import Interval_delivery
+from data.intervals_delivery import IntervalDelivery
 from data.orders import Order
-from data.orders_regions import Order_region
+from data.orders_regions import OrderRegion
 from data.regions import Regions
 
 
@@ -20,6 +20,9 @@ class CouriersListResource(Resource):
             if not all(key in keys for key in courier_data) or len(keys) != len(courier_data):
                 not_validate_couriers.append(courier_data['courier_id'])
                 continue
+            if not isinstance(courier_data['regions'], list) or not isinstance(courier_data['working_hours'], list):
+                not_validate_couriers.append(courier_data['courier_id'])
+                continue
 
             try:
                 courier = Courier(courier_id=courier_data['courier_id'], courier_type=courier_data['courier_type'])
@@ -28,7 +31,7 @@ class CouriersListResource(Resource):
                 intervals = [Interval(courier_id=courier_data['courier_id'],
                                       time_start=time, time_stop=time) for time in courier_data['working_hours']]
                 validate_object.extend([courier] + regions + intervals)
-            except (ValueError, AssertionError):
+            except (ValueError, AssertionError, TypeError, IndexError):
                 not_validate_couriers.append(courier_data['courier_id'])
 
         if not_validate_couriers:
@@ -63,18 +66,21 @@ class CouriersResource(Resource):
 
         keys = list(set(keys) & set(data.keys()))
         courier = sess.query(Courier).filter(Courier.courier_id == courier_id).first()
-
         try:
             if 'regions' in keys:
+                if not isinstance(data['regions'], list) or len(data['regions']) == 0:
+                    abort(400)
                 delete_objects.extend(sess.query(Regions).filter(Regions.courier_id == courier_id).all())
                 add_objects.extend([Regions(courier_id=courier_id, region=region) for region in data['regions']])
             if 'working_hours' in keys:
+                if not isinstance(data['working_hours'], list):
+                    abort(400)
                 delete_objects.extend(sess.query(Interval).filter(Interval.courier_id == courier_id).all())
                 add_objects.extend([Interval(courier_id=courier_id, time_start=time, time_stop=time) for time in
                                     data['working_hours']])
             if 'courier_type' in keys:
                 courier.courier_type = data['courier_type']
-        except (ValueError, AssertionError):
+        except (ValueError, AssertionError, IndexError, TypeError):
             abort(400)
 
         for delete_object in delete_objects:
@@ -89,15 +95,15 @@ class CouriersResource(Resource):
                            sess.query(Regions).filter(Regions.courier_id == courier_id).all()]
 
         for order in delivery:
-            intervals_delivery = sess.query(Interval_delivery).filter(
-                Interval_delivery.order_id == order.order_id).all()
+            intervals_delivery = sess.query(IntervalDelivery).filter(
+                IntervalDelivery.order_id == order.order_id).all()
             intervals = sess.query(Interval).filter(Interval.courier_id == courier_id).all()
 
             suit_for_intervals = any([any(
                 [interval_delivery.time_stop > interval.time_start and interval.time_stop > interval_delivery.time_start
                  for interval_delivery in intervals_delivery]) for interval in intervals])
 
-            region = sess.query(Order_region).filter(Order_region.order_id == order.order_id).first().region
+            region = sess.query(OrderRegion).filter(OrderRegion.order_id == order.order_id).first().region
             suit_for_regions = region in courier_regions
             if not suit_for_intervals or not suit_for_regions:
                 order.assign_time = None
@@ -108,7 +114,7 @@ class CouriersResource(Resource):
         delivery = list(filter(lambda x: x.courier_id is not None, delivery))
         sum_weight = sum([order.weight for order in delivery])
         i = 0
-        while sum_weight > sess.query(Courier_type).filter(Courier_type.type == courier.courier_type).first().carrying:
+        while sum_weight > sess.query(CourierType).filter(CourierType.type == courier.courier_type).first().carrying:
             sum_weight -= delivery[i].weight
             delivery[i].assign_time = None
             delivery[i].courier_id = None
@@ -119,7 +125,7 @@ class CouriersResource(Resource):
         return make_response(jsonify({'courier_id': courier.courier_id, 'courier_type': courier.courier_type,
                                       'regions': [region.region for region in
                                                   sess.query(Regions).filter(Regions.courier_id == courier_id)],
-                                      'working_hours': [f'{interval.time_start}-{interval.time_stop}' for interval in
+                                      'working_hours': [f'{str(interval)}' for interval in
                                                         sess.query(Interval).filter(
                                                             Interval.courier_id == courier_id).all()]}), 200)
 
@@ -133,16 +139,16 @@ class CouriersResource(Resource):
         courier = sess.query(Courier).filter(Courier.courier_id == courier_id).first()
         if not courier:
             abort(404)
-        orders = sess.query(Order).filter(Order.courier_id == courier_id, Order.complete_time is not None).all()
-        regions = list(set([sess.query(Order_region).filter(Order_region.order_id == order.order_id).first().region
+        orders = sess.query(Order).filter(Order.courier_id == courier_id, Order.complete_time != None).all()
+        regions = list(set([sess.query(OrderRegion).filter(OrderRegion.order_id == order.order_id).first().region
                             for order in orders]))
         av_time = {}
         rating = 0
         if orders:
             for region in regions:
                 delivery = list(filter(lambda order: region in [reg.region for reg in
-                                                                sess.query(Order_region).filter(
-                                                                    Order_region.order_id == order.order_id).all()],
+                                                                sess.query(OrderRegion).filter(
+                                                                    OrderRegion.order_id == order.order_id).all()],
                                        orders))
                 delivery = sorted(delivery, key=lambda order: order.complete_time)
                 if delivery is None:
@@ -159,20 +165,21 @@ class CouriersResource(Resource):
         assign_times = [order.assign_time for order in
                         sess.query(Order.assign_time).filter(Order.courier_id == courier_id).distinct()]
         earnings = 0
-
+        complete_delivery = 0
         for time in assign_times:
             delivery = sess.query(Order).filter(Order.assign_time == time).all()
-            orders_complete = sess.query(Order).filter(Order.assign_time == time, Order.complete_time is not None).all()
+            orders_complete = sess.query(Order).filter(Order.assign_time == time, Order.complete_time != None).all()
             if len(delivery) == len(orders_complete):
-                earnings += 500 * sess.query(Courier_type).filter(
-                    Courier_type.type == delivery[0].type_for_delivery).first().coefficient
+                complete_delivery += 1
+                earnings += 500 * sess.query(CourierType).filter(
+                    CourierType.type == delivery[0].type_for_delivery).first().coefficient
 
-        if orders:
+        if complete_delivery:
             return make_response(jsonify({'courier_id': courier_id,
                                           'courier_type': courier.courier_type,
                                           'regions': [reg.region for reg in sess.query(Regions).filter(
                                               Regions.courier_id == courier_id).all()],
-                                          "working_hours": [f'{hours.time_start}-{hours.time_stop}' for hours in
+                                          "working_hours": [str(hours) for hours in
                                                             sess.query(Interval).filter(
                                                                 Interval.courier_id == courier_id).all()],
                                           "rating": rating,
@@ -182,7 +189,7 @@ class CouriersResource(Resource):
                                       'courier_type': courier.courier_type,
                                       'regions': [reg.region for reg in
                                                   sess.query(Regions).filter(Regions.courier_id == courier_id).all()],
-                                      "working_hours": [f'{hours.time_start}-{hours.time_stop}' for hours in
+                                      "working_hours": [str(hours) for hours in
                                                         sess.query(Interval).filter(
                                                             Interval.courier_id == courier_id).all()],
                                       "earnings": earnings}), 200)

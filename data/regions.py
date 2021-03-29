@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import relation, validates, create_session
+from sqlalchemy.orm import relation, validates
+
 from .db_session import SqlAlchemyBase
-from .couriers import Courier
 
 
 class Regions(SqlAlchemyBase):
@@ -24,4 +24,3 @@ class Regions(SqlAlchemyBase):
     def validate_courier_id(self, key, value):
         assert isinstance(value, int) and value > 0
         return value
-

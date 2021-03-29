@@ -1,10 +1,10 @@
 from sqlalchemy import Column, Integer, ForeignKey
-from sqlalchemy.orm import relation, validates, create_session
+from sqlalchemy.orm import relation, validates
+
 from .db_session import SqlAlchemyBase
-from .orders import Order
 
 
-class Order_region(SqlAlchemyBase):
+class OrderRegion(SqlAlchemyBase):
     __tablename__ = 'orders_regions'
 
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -22,6 +22,5 @@ class Order_region(SqlAlchemyBase):
 
     @validates('order_id')
     def validate_courier_id(self, key, value):
-        session = create_session()
+        assert isinstance(value, int) and value > 0
         return value
-

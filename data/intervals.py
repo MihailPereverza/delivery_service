@@ -19,6 +19,9 @@ class Interval(SqlAlchemyBase):
     def validate_time_start(self, key, value: str):
         assert isinstance(value, str)
         value = value.split('-')
+        time_stop = datetime.strptime(value[1], '%H:%M')
+        time_start = datetime.strptime(value[0], '%H:%M')
+        assert time_stop > time_start
         value = datetime.strptime(value[0], '%H:%M').time()
         return value
 
@@ -26,5 +29,11 @@ class Interval(SqlAlchemyBase):
     def validate_time_stop(self, key, value: str):
         assert isinstance(value, str)
         value = value.split('-')
+        time_stop = datetime.strptime(value[1], '%H:%M')
+        time_start = datetime.strptime(value[0], '%H:%M')
+        assert time_stop > time_start
         value = datetime.strptime(value[1], '%H:%M').time()
         return value
+
+    def __str__(self):
+        return f'{self.time_start.strftime("%H:%M")}-{self.time_stop.strftime("%H:%M")}'
