@@ -5,7 +5,7 @@ test.py
 db/test_base.db-journal
 db/base.db
 db/test_bese.db
-tmp/
+tmp
 
 
 # Byte-compiled / optimized / DLL files
