@@ -6,23 +6,21 @@
 * ##### Flask 
 * ##### Настроенный venv
 
-# Настройка venv
-1. ##### Открыть корень проетка через консоль
-2. ##### Последовательно ввести следующие команды:
-    * `sudo python3 -m venv venv`
-    * `source venv/bin/activate`
-    * `sudo pip3 install -r requirements.txt`
 # Запуск сайта
 1. ##### Открыть корень проетка через консоль
-2. ##### Выполнить слудующую команду:
-    * `sudo python3 app.py`
+2. ##### Выполнить следующие команды:
+    * `sudo service nginx restart`
+    * `sudo systemctl restart gunicorn.service`
+    * `sudo systemctl enable gunicorn.service`
+    * `sudo systemctl start gunicorn.service`
+    * `sudo systemctl status gunicorn.service`
 
 # Запуск тестирования
 1. ##### Открыть корень проетка через консоль
 2. ##### Выполнить слудующую команду:
-    * `sudo pytest`
+    * `pytest`
 
 # Запуск проверки на `pep8`
 1. ##### Открыть корень проетка через консоль
 2. ##### Выполнить слудующую команду:
-    * `sudo flake8`
+    * `flake8`
