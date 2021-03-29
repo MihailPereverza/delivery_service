@@ -3,6 +3,7 @@ from sqlalchemy.orm import relation, validates
 from .couriers import Courier
 from .couriers_type import CourierType
 from .db_session import SqlAlchemyBase, create_session
+from datetime import datetime
 
 
 class Order(SqlAlchemyBase):
@@ -30,6 +31,16 @@ class Order(SqlAlchemyBase):
     @validates('weight')
     def validate_weight(self, key, value):
         assert isinstance(value, (float, int)) and 50 >= value >= 0.01 and round(value, 2) == value
+        return value
+
+    @validates('assign_time')
+    def validate_assign_time(self, key, value):
+        assert isinstance(value, datetime) or value is None
+        return value
+
+    @validates('complete_time')
+    def validate_complete_time(self, key, value):
+        assert isinstance(value, datetime)
         return value
 
     @validates('courier_id')

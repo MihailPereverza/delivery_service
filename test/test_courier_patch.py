@@ -91,7 +91,6 @@ def test_success_patch_courier(client):
     }
     rv = client.patch('/couriers/1', json=json)
     assert rv.status_code == 200
-    print(loads(rv.data))
     assert rv.data == b'{"courier_id":1,"courier_type":"bike","regions":[13],"working_hours":["05:00-06:00"]}\n'
 
 
@@ -101,7 +100,6 @@ def test_success_edit_courier_type_with_unassign_orders(client):
         'courier_id': 1
     }
     rv_assign = client.post('/orders/assign', json=json_assign)
-    print(rv_assign.data)
     json = {
         "courier_type": "foot"
     }
@@ -192,7 +190,6 @@ def test_success_edit_courier_type(client):
     }
     rv = client.patch('/couriers/1', json=json)
     assert rv.status_code == 200
-    print(loads(rv.data))
     assert loads(rv.data) == {"courier_id": 1,
                               "courier_type": "bike",
                               "regions": [11, 12, 22],
@@ -203,9 +200,6 @@ def test_success_edit_courier_type(client):
     regions = list(sorted(regions))
     assert regions == [11, 12, 22]
     working_hours = [str(interval) for interval in sess.query(Interval).filter(Interval.courier_id == 1).all()]
-    print(working_hours)
-    print(["9:35-14:05", "14:30-17:00"])
-    print(set(working_hours) - set(["9:35-14:05", "14:30-17:00"]))
     assert set(working_hours) - set(["09:35-14:05", "14:30-17:00"]) == set()
 
 
@@ -217,7 +211,6 @@ def test_success_edit_regions(client):
     }
     rv = client.patch('/couriers/1', json=json)
     assert rv.status_code == 200
-    print(loads(rv.data))
     assert loads(rv.data) == {"courier_id": 1,
                               "courier_type": "car",
                               "regions": [2, 3, 4],
@@ -238,7 +231,6 @@ def test_success_edit_working_hours(client):
     }
     rv = client.patch('/couriers/1', json=json)
     assert rv.status_code == 200
-    print(loads(rv.data))
     assert rv.data == b'{"courier_id":1,"courier_type":"car","regions":[11,12,22],"working_hours":["07:00-09:00"]}\n'
     courier = sess.query(Courier).first()
     assert courier.courier_type == 'car'

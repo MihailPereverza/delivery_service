@@ -35,5 +35,10 @@ class Interval(SqlAlchemyBase):
         value = datetime.strptime(value[1], '%H:%M').time()
         return value
 
+    @validates('courier_id')
+    def validate_courier_id(self, key, value):
+        assert isinstance(value, int) and value > 0
+        return value
+
     def __str__(self):
         return f'{self.time_start.strftime("%H:%M")}-{self.time_stop.strftime("%H:%M")}'

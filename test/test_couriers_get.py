@@ -148,7 +148,6 @@ def test_success_get_courier(client):
     add_delivery_success_get_courier()
     rv = client.get('/couriers/1')
     data = loads(rv.data)
-    print(data)
     assert rv.status_code == 200
     assert data['earnings'] == 9000
     assert round(data['rating']) == 5
@@ -158,7 +157,6 @@ def test_success_get_courier_without_delivery(client):
     add_order_success_get_courier_without_delivery()
     rv = client.get('/couriers/1')
     data = loads(rv.data)
-    print(data)
     assert rv.status_code == 200
     assert data['earnings'] == 0
     assert 'rating' not in list(data.keys())
