@@ -37,7 +37,7 @@ def main():
     db_session.global_init("db/base.db")
     add_courier_types()
     # app.run(debug=True, port=5000, host='127.0.0.1')
-    serve(app, host='0.0.0.0', port=8080)
+    serve(app, host='127.0.0.1', port=5000)
 
 
 if __name__ == '__main__':

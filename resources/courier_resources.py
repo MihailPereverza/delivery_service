@@ -89,7 +89,7 @@ class CouriersResource(Resource):
             sess.add(add_object)
         sess.commit()
 
-        delivery = sess.query(Order).filter(Order.courier_id == courier_id).all()
+        delivery = sess.query(Order).filter(Order.courier_id == courier_id, Order.complete_time == None).all()
         delivery = sorted(delivery, key=lambda x: x.weight, reverse=True)
         courier_regions = [region.region for region in
                            sess.query(Regions).filter(Regions.courier_id == courier_id).all()]

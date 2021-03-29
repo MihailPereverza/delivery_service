@@ -72,7 +72,7 @@ class OrdersAssignResources(Resource):
         now = datetime.now()
         delivery = sess.query(Order).filter(Order.courier_id == courier_id, Order.complete_time == None).all()
         orders = sorted(orders, key=lambda order: order.weight)
-
+        print(delivery)
         if delivery:
             now = delivery[0].assign_time
             orders_for_courier = [order.order_id for order in delivery]
